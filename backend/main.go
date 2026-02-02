@@ -1,10 +1,12 @@
 package main
 
+"time"
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/nexus/term/internal/auth"
@@ -202,9 +204,32 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 
+	// Logging Middleware
+    logRequest := func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            start := time.Now()
+            lrw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+            next.ServeHTTP(lrw, r)
+            log.Printf("%s %s %d %s", r.Method, r.URL.Path, lrw.statusCode, time.Since(start))
+        })
+    }
+    
+    // Wrap handler
+    loggedMux := logRequest(http.DefaultServeMux)
+
 	port := "8080"
 	log.Printf("Starting NexusTerm Server on :%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, loggedMux); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
+}
+
+type loggingResponseWriter struct {
+    http.ResponseWriter
+    statusCode int
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+    lrw.statusCode = code
+    lrw.ResponseWriter.WriteHeader(code)
 }

@@ -61,9 +61,8 @@ const performAuth = async () => {
         formData.append('password', authForm.value.password);
         
         const endpoint = authMode.value === 'login' ? '/api/login' : '/api/register';
-        const baseUrl = 'http://localhost:8080';
         
-        const res = await fetch(baseUrl + endpoint, {
+        const res = await fetch(endpoint, {
             method: 'POST',
             body: formData
         });

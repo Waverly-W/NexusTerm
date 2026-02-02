@@ -225,9 +225,7 @@ const connect = (hostID?: number) => {
   error.value = '';
   
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//localhost:8080/api/ws?token=${props.token}`;
-  
-  socket = new WebSocket(wsUrl);
+  socket = new WebSocket(`${protocol}//${window.location.host}/api/ws?token=${props.token}`);
   socket.binaryType = 'arraybuffer'; 
 
   socket.onopen = () => {

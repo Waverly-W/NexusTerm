@@ -101,7 +101,7 @@ const canTest = computed(() => {
 const fetchHosts = async () => {
   loading.value = true;
   try {
-    const res = await fetch('http://localhost:8080/api/hosts', {
+    const res = await fetch('/api/hosts', {
       headers: { 'Authorization': `Bearer ${props.token}` }
     });
     if (res.ok) {
@@ -142,7 +142,7 @@ const testConnection = async () => {
     testing.value = true;
     testStatus.value = null;
     try {
-        const res = await fetch('http://localhost:8080/api/test-connection', {
+        const res = await fetch('/api/test-connection', {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify({
@@ -177,7 +177,7 @@ const saveHost = async () => {
   const method = isEditMode.value ? 'PUT' : 'POST';
   
   try {
-    const res = await fetch('http://localhost:8080/api/hosts', {
+    const res = await fetch('/api/hosts', {
       method: method,
       headers: {
         'Content-Type': 'application/json',
