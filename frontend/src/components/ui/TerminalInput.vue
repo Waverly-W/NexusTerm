@@ -4,27 +4,52 @@
     <div class="input-container">
       <input 
         v-bind="$attrs"
+        :type="currentType"
         v-model="modelValue"
         class="real-input"
-        type="text"
+        :class="{ 'has-toggle': isPasswordType }"
       />
-      <!-- Visual cursor logic could be complex, for now we rely on the native caret and styling -->
+      <button 
+        v-if="isPasswordType" 
+        class="toggle-btn" 
+        @click.prevent="toggleShow"
+        tabindex="-1"
+        type="button"
+      >
+        {{ showPassword ? '[HIDE]' : '[SHOW]' }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
   modelValue: [String, Number],
   prompt: {
     type: String,
     default: 'user@nexus:~$'
+  },
+  type: {
+    type: String,
+    default: 'text'
   }
 });
 
 const emit = defineEmits(['update:modelValue']);
+
+const showPassword = ref(false);
+const isPasswordType = computed(() => props.type === 'password');
+
+const currentType = computed(() => {
+  if (!isPasswordType.value) return props.type;
+  return showPassword.value ? 'text' : 'password';
+});
+
+const toggleShow = () => {
+    showPassword.value = !showPassword.value;
+};
 
 const modelValue = computed({
   get: () => props.modelValue,
@@ -49,10 +74,19 @@ const modelValue = computed({
 
 .input-container {
   flex: 1;
+  display: flex;
+  align-items: center;
   position: relative;
+  border-bottom: 1px dotted transparent;
+  transition: border-color 0.2s;
+}
+
+.input-container:focus-within {
+  border-bottom-color: var(--term-muted);
 }
 
 .real-input {
+  flex: 1;
   width: 100%;
   background: transparent;
   border: none;
@@ -60,7 +94,28 @@ const modelValue = computed({
   font-family: var(--term-font);
   font-size: 1rem;
   outline: none;
-  caret-color: var(--term-text); /* The blinking cursor */
+  caret-color: var(--term-text);
+  padding: 0;
+}
+
+.real-input.has-toggle {
+    padding-right: 4rem;
+}
+
+.toggle-btn {
+    position: absolute;
+    right: 0;
+    background: transparent;
+    border: none;
+    color: var(--term-muted);
+    font-family: var(--term-font);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0;
+    user-select: none;
+}
+.toggle-btn:hover {
+    color: var(--term-text);
 }
 
 /* Custom placeholder */
