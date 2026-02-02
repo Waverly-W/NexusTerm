@@ -1,1 +1,18 @@
-/data.db
+# Binaries and Build Artifacts
+term
+backend/nexusterm
+frontend/dist/
+
+# Dependencies
+frontend/node_modules/
+
+# Local Data and Configuration
+*.db
+*.log
+.env
+data/
+
+# OS and IDE Files
+.DS_Store
+.idea/
+.vscode/
