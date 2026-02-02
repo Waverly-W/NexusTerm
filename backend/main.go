@@ -1,3 +1,5 @@
+package main
+
 import (
 	"encoding/json"
 	"log"
@@ -14,31 +16,31 @@ import (
 
 func main() {
 	// Initialize Database
-    dbPath := os.Getenv("DB_PATH")
-    if dbPath == "" {
-        dbPath = "./data.db"
-    }
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "./data.db"
+	}
 	if err := database.Init(dbPath); err != nil {
 		log.Fatal("Database init:", err)
 	}
 
 	// Initialize SessionManager
 	sessionMgr := ssh.NewSessionManager()
-	
+
 	// Services
 	authSvc := &auth.Service{}
 	hostSvc := &host.Service{}
-	
-    // Admin Bootstrap
-    adminUser := os.Getenv("ADMIN_USER")
-    adminPass := os.Getenv("ADMIN_PASSWORD")
-    if adminUser != "" && adminPass != "" {
-        if err := authSvc.EnsureAdmin(adminUser, adminPass); err != nil {
-            log.Printf("Failed to ensure admin user: %v", err)
-        } else {
-            log.Printf("Admin user '%s' ensured.", adminUser)
-        }
-    }
+
+	// Admin Bootstrap
+	adminUser := os.Getenv("ADMIN_USER")
+	adminPass := os.Getenv("ADMIN_PASSWORD")
+	if adminUser != "" && adminPass != "" {
+		if err := authSvc.EnsureAdmin(adminUser, adminPass); err != nil {
+			log.Printf("Failed to ensure admin user: %v", err)
+		} else {
+			log.Printf("Admin user '%s' ensured.", adminUser)
+		}
+	}
 
 	// Initialize Handler (Dependency Injection)
 	handler := ws.NewHandler(sessionMgr, hostSvc)
@@ -64,7 +66,7 @@ func main() {
 		// ... existing logic
 		username := r.FormValue("username")
 		password := r.FormValue("password")
-		
+
 		token, err := authSvc.Login(username, password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -72,7 +74,7 @@ func main() {
 		}
 		w.Write([]byte(token))
 	})
-	
+
 	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 		if r.Method == "OPTIONS" {
@@ -83,15 +85,15 @@ func main() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-        
-        if os.Getenv("DISABLE_REGISTRATION") == "true" {
-            http.Error(w, "Registration is disabled by administrator.", http.StatusForbidden)
-            return
-        }
+
+		if os.Getenv("DISABLE_REGISTRATION") == "true" {
+			http.Error(w, "Registration is disabled by administrator.", http.StatusForbidden)
+			return
+		}
 
 		username := r.FormValue("username")
 		password := r.FormValue("password")
-		
+
 		if err := authSvc.Register(username, password); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -104,7 +106,7 @@ func main() {
 		if r.Method == "OPTIONS" {
 			return
 		}
-		
+
 		// Auth Check (header or query)
 		tokenStr := r.Header.Get("Authorization")
 		if tokenStr == "" {
@@ -119,7 +121,7 @@ func main() {
 		token, _ := jwt.ParseWithClaims(tokenStr, &auth.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return auth.SecretKey, nil
 		})
-		
+
 		// Get Claims
 		var userID int
 		if claims, ok := token.Claims.(*auth.Claims); ok && token.Valid {
@@ -148,58 +150,58 @@ func main() {
 			}
 			w.Write([]byte("ok"))
 		} else if r.Method == "PUT" {
-            var h host.Host
-            if err := json.NewDecoder(r.Body).Decode(&h); err != nil {
-                http.Error(w, err.Error(), http.StatusBadRequest)
-                return
-            }
-            if err := hostSvc.Update(userID, h); err != nil {
-                http.Error(w, err.Error(), http.StatusInternalServerError)
-                return
-            }
-            w.Write([]byte("updated"))
-        }
+			var h host.Host
+			if err := json.NewDecoder(r.Body).Decode(&h); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if err := hostSvc.Update(userID, h); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write([]byte("updated"))
+		}
 	})
 
-    http.HandleFunc("/api/test-connection", func(w http.ResponseWriter, r *http.Request) {
-        enableCors(&w)
-        if r.Method == "OPTIONS" {
-            return
-        }
-        if r.Method != "POST" {
-            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-            return
-        }
+	http.HandleFunc("/api/test-connection", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == "OPTIONS" {
+			return
+		}
+		if r.Method != "POST" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
-        var req struct {
-            Host     string `json:"host"`
-            Port     int    `json:"port"`
-            User     string `json:"user"`
-            Password string `json:"password"`
-        }
-        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, err.Error(), http.StatusBadRequest)
-            return
-        }
+		var req struct {
+			Host     string `json:"host"`
+			Port     int    `json:"port"`
+			User     string `json:"user"`
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-        client, err := ssh.Connect(req.Host, req.Port, req.User, req.Password)
-        if err != nil {
-            http.Error(w, "Connection failed: "+err.Error(), http.StatusBadGateway)
-            return
-        }
-        defer client.Close()
+		client, err := ssh.Connect(req.Host, req.Port, req.User, req.Password)
+		if err != nil {
+			http.Error(w, "Connection failed: "+err.Error(), http.StatusBadGateway)
+			return
+		}
+		defer client.Close()
 
-        w.Write([]byte("success"))
-    })
+		w.Write([]byte("success"))
+	})
 
 	http.HandleFunc("/api/ws", handler.ServeHTTP)
-	
+
 	// Serve Frontend Static Files
 	// In production (Docker), frontend is built to /static
 	// For dev, we might use Vite proxy, but here we serve /static as well
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
-	
+
 	port := "8080"
 	log.Printf("Starting NexusTerm Server on :%s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
