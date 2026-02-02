@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  nexusterm:
+    build: .
+    image: nexus-term:latest
+    container_name: nexusterm
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - DB_PATH=/data/nexus.db
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - DISABLE_REGISTRATION=${DISABLE_REGISTRATION:-false}
+    restart: unless-stopped

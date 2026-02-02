@@ -1,0 +1,118 @@
+/* Terminal CLI Design System Tokens */
+:root {
+    /* Colors - Phosphor Monitor Palette */
+    --term-bg: #0a0a0a;
+    --term-text: #33ff00;
+    /* Primary Terminal Green */
+    --term-secondary: #ffb000;
+    /* Amber for accents/warnings */
+    --term-muted: #1f521f;
+    /* Dimmed green for borders */
+    --term-error: #ff3333;
+    /* Bright Red */
+
+    /* Typography */
+    --term-font: 'JetBrains Mono', 'Fira Code', 'VT323', monospace;
+
+    /* Effects */
+    --term-glow: 0 0 5px rgba(51, 255, 0, 0.5);
+    --term-border-style: 1px solid var(--term-muted);
+}
+
+/* Global Reset */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--term-bg);
+    color: var(--term-text);
+    font-family: var(--term-font);
+    -webkit-font-smoothing: none;
+    /* Make it crisp/pixelated */
+    overflow: hidden;
+    /* App container handles scroll */
+}
+
+/* Base Styles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    text-transform: uppercase;
+    font-weight: normal;
+    margin: 0 0 1rem 0;
+    letter-spacing: 1px;
+}
+
+a {
+    color: var(--term-text);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    text-shadow: var(--term-glow);
+}
+
+/* Utilities */
+.term-blink {
+    animation: blink 1s step-end infinite;
+}
+
+.term-header {
+    border-bottom: var(--term-border-style);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Animations */
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Scanline Overlay */
+body::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 9999;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--term-bg);
+    border-left: 1px solid var(--term-muted);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--term-muted);
+    border: 1px solid var(--term-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--term-text);
+}
