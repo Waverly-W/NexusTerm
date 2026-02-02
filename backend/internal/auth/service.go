@@ -101,22 +101,40 @@ func (s *Service) Register(username, password string) error {
 }
 
 // EnsureAdmin ensures an admin account exists with the given credentials.
-// It creates the user if missing, or updates the password if it exists.
+// It creates the user if missing. If the user exists, it verifies the password.
+// It ONLY updates the salt/hash if the password has changed, to preserve encryption keys.
 func (s *Service) EnsureAdmin(username, password string) error {
     var id int
-    err := database.DB.QueryRow("SELECT id FROM users WHERE username = ?", username).Scan(&id)
-    
-    salt, _ := security.GenerateSalt(16)
-    derived := security.DeriveKey([]byte(password), salt)
+    var existingHash string
+    var existingSalt []byte
+
+    err := database.DB.QueryRow("SELECT id, password_hash, encryption_salt FROM users WHERE username = ?", username).Scan(&id, &existingHash, &existingSalt)
     
     if err == sql.ErrNoRows {
-        // Create
+        // Create new user
+        salt, _ := security.GenerateSalt(16)
+        derived := security.DeriveKey([]byte(password), salt)
         _, err = database.DB.Exec("INSERT INTO users (username, password_hash, encryption_salt) VALUES (?, ?, ?)", 
             username, string(derived), salt)
-    } else if err == nil {
-        // Update
-        _, err = database.DB.Exec("UPDATE users SET password_hash = ?, encryption_salt = ? WHERE id = ?", 
-            string(derived), salt, id)
+        return err
+    } else if err != nil {
+        return err
     }
+
+    // User exists, check if password matches
+    derived := security.DeriveKey([]byte(password), existingSalt)
+    if string(derived) == existingHash {
+        // Password matches, DO NOT update. This preserves the encryption key.
+        return nil
+    }
+
+    // Password changed, we must update.
+    // WARNING: This invalidates all encrypted data for this user!
+    // We generate a new salt for security best practice on password rotation.
+    newSalt, _ := security.GenerateSalt(16)
+    newDerived := security.DeriveKey([]byte(password), newSalt)
+    
+    _, err = database.DB.Exec("UPDATE users SET password_hash = ?, encryption_salt = ? WHERE id = ?", 
+        string(newDerived), newSalt, id)
     return err
 }
