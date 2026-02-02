@@ -33,24 +33,38 @@ func NewHandler(manager *ssh.SessionManager, hostSvc *host.Service) *Handler {
 
 // ServeHTTP handles the websocket connection
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    log.Printf("[WS] Connection attempt from %s, Origin: %s", r.RemoteAddr, r.Header.Get("Origin"))
+
 	// Parse Token to get UserID (if available)
 	tokenStr := r.URL.Query().Get("token")
 	var userID int
 	if tokenStr != "" {
-		token, _ := jwt.ParseWithClaims(tokenStr, &auth.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenStr, &auth.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return auth.SecretKey, nil
 		})
+        
+        if err != nil {
+            log.Printf("[WS] Token parse error: %v", err)
+        }
 		
-		if claims, ok := token.Claims.(*auth.Claims); ok && token.Valid {
-			userID = claims.UserID
-		}
-	}
+		if token != nil {
+            if claims, ok := token.Claims.(*auth.Claims); ok && token.Valid {
+                userID = claims.UserID
+                log.Printf("[WS] Authenticated UserID: %d", userID)
+            } else {
+                log.Printf("[WS] Token invalid or claims mismatch")
+            }
+        }
+	} else {
+        log.Printf("[WS] No token provided")
+    }
 
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("upgrade:", err)
+		log.Println("[WS] Upgrade failed:", err)
 		return
 	}
+    log.Println("[WS] Upgrade successful, connection established")
 	defer ws.Close()
 
 	// ...
