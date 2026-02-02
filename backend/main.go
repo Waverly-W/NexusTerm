@@ -1,6 +1,3 @@
-package main
-
-"os"
 import (
 	"encoding/json"
 	"log"
