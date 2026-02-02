@@ -1,6 +1,5 @@
 package main
 
-"time"
 import (
 	"encoding/json"
 	"log"
