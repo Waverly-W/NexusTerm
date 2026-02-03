@@ -1,30 +1,63 @@
 <template>
   <div class="virtual-keyboard">
-    <!-- Row 1: Numbers -->
-    <div class="kb-row">
-      <button v-for="k in ['1','2','3','4','5','6','7','8','9','0']" :key="k" @click="$emit('key', k)">{{k}}</button>
+    <!-- Row 0: Common Symbols (Always Visible) per user request -->
+    <div class="kb-row symbols-row">
+       <button v-for="k in commonSymbols" :key="k" @click="$emit('key', k)">{{k}}</button>
     </div>
-    <!-- Row 2: QWERTY -->
-    <div class="kb-row">
-      <button v-for="k in ['q','w','e','r','t','y','u','i','o','p']" :key="k" @click="$emit('key', k)">{{k}}</button>
-    </div>
-    <!-- Row 3: ASDF -->
-    <div class="kb-row">
-      <button v-for="k in ['a','s','d','f','g','h','j','k','l']" :key="k" @click="$emit('key', k)">{{k}}</button>
-       <button class="action-btn" @click="$emit('key', 'Enter')">Ent</button>
-    </div>
-    <!-- Row 4: ZXCV -->
-    <div class="kb-row">
-       <button class="action-btn" :class="{active: shiftActive}" @click="$emit('toggle-shift')">Shft</button>
-       <button v-for="k in ['z','x','c','v','b','n','m']" :key="k" @click="$emit('key', k)">{{k}}</button>
-       <button class="action-btn" @click="$emit('key', 'Backspace')">Del</button>
-    </div>
-    <!-- Row 5: Symbols & Space -->
-    <div class="kb-row">
-       <button v-for="k in ['-','/','|','_','.',',']" :key="k" @click="$emit('key', k)">{{k}}</button>
-       <button class="space-btn" @click="$emit('key', ' ')">SPACE</button>
-    </div>
-    <!-- Row 6: Terminal Specials -->
+
+    <!-- MAIN LAYER -->
+    <template v-if="!showSymbols">
+      <!-- Row 1: Numbers -->
+      <div class="kb-row">
+        <button v-for="k in numbers" :key="k" @click="$emit('key', k)">{{k}}</button>
+      </div>
+      <!-- Row 2: QWERTY -->
+      <div class="kb-row">
+        <button v-for="k in ['q','w','e','r','t','y','u','i','o','p']" :key="k" @click="$emit('key', k)">{{k}}</button>
+      </div>
+      <!-- Row 3: ASDF -->
+      <div class="kb-row">
+        <div class="spacer-half"></div>
+        <button v-for="k in ['a','s','d','f','g','h','j','k','l']" :key="k" @click="$emit('key', k)">{{k}}</button>
+         <button class="action-btn" @click="$emit('key', 'Enter')">Ent</button>
+      </div>
+      <!-- Row 4: ZXCV -->
+      <div class="kb-row">
+         <button class="action-btn" :class="{active: shiftActive}" @click="$emit('toggle-shift')">Shft</button>
+         <button v-for="k in ['z','x','c','v','b','n','m']" :key="k" @click="$emit('key', k)">{{k}}</button>
+         <button class="action-btn" @click="$emit('key', 'Backspace')">BS</button>
+      </div>
+      <!-- Row 5: Bottom -->
+      <div class="kb-row">
+         <button class="action-btn" :class="{active: showSymbols}" @click="showSymbols = !showSymbols">?123</button>
+         <button v-for="k in ['.',',','/','-']" :key="k" @click="$emit('key', k)">{{k}}</button>
+         <button class="space-btn" @click="$emit('key', ' ')">SPACE</button>
+      </div>
+    </template>
+
+    <!-- SYMBOL LAYER -->
+    <template v-else>
+       <div class="kb-row">
+          <button v-for="k in ['1','2','3','4','5','6','7','8','9','0']" :key="k" @click="$emit('key', k)">{{k}}</button>
+       </div>
+       <div class="kb-row">
+          <button v-for="k in ['~','`','|','\\','{','}','[',']','<','>']" :key="k" @click="$emit('key', k)">{{k}}</button>
+       </div>
+       <div class="kb-row">
+          <button v-for="k in [':',';','\'','&quot;','?','!','@','#','$','%']" :key="k" @click="$emit('key', k)">{{k}}</button>
+       </div>
+       <div class="kb-row">
+          <button v-for="k in ['^','&','*','(',')','_','+','-','=','/']" :key="k" @click="$emit('key', k)">{{k}}</button>
+          <button class="action-btn" @click="$emit('key', 'Backspace')">BS</button>
+       </div>
+       <div class="kb-row">
+           <button class="action-btn" :class="{active: showSymbols}" @click="showSymbols = !showSymbols">ABC</button>
+           <button class="action-btn" @click="$emit('key', 'Enter')">Enter</button>
+           <button class="space-btn" @click="$emit('key', ' ')">SPACE</button>
+       </div>
+    </template>
+
+    <!-- Row 6: Terminal Specials (Always Visible) -->
     <div class="kb-row specials">
        <button class="special-btn" @click="$emit('key', 'Escape')">Esc</button>
        <button class="special-btn" @click="$emit('key', 'Tab')">Tab</button>
@@ -39,6 +72,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+
 defineProps<{
   ctrlActive: boolean,
   shiftActive: boolean
@@ -49,6 +84,11 @@ defineEmits<{
   (e: 'toggle-ctrl'): void,
   (e: 'toggle-shift'): void
 }>();
+
+const showSymbols = ref(false);
+
+const commonSymbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+'];
+const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 </script>
 
 <style scoped>
@@ -116,5 +156,14 @@ button:active {
 .special-btn {
   font-size: 12px;
   background: #222;
+}
+.spacer-half {
+  flex: 0.5;
+}
+
+.symbols-row button {
+    font-size: 14px;
+    background: #1a1a1a;
+    font-weight: bold;
 }
 </style>
