@@ -1,7 +1,11 @@
 <template>
-  <div class="host-manager">
+  <div class="host-manager animate-fade-in">
     <!-- Top Bar with Settings Icon -->
     <div class="top-bar">
+        <div class="user-status">
+            <span class="status-indicator online"></span>
+            CONNECTED AS <span class="text-primary">ADMIN</span>
+        </div>
         <button class="icon-btn settings-btn" @click="openSettings" title="Settings">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -10,11 +14,11 @@
         </button>
     </div>
 
-    <TerminalCard title="Available Hosts">
+    <TerminalCard title="Network Targets">
       <div class="header">
-        <span class="info-text">SELECT TARGET SYSTEM:</span>
+        <span class="info-text">AVAILABLE HOST ENDPOINTS:</span>
         <div class="header-actions">
-           <!-- Refresh Button (Icon) -->
+           <!-- Refresh Button -->
            <button class="icon-btn" @click="fetchHosts" title="Refresh List">
              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M23 4v6h-6"></path>
@@ -23,134 +27,162 @@
              </svg>
            </button>
            
-           <!-- Add Host Button (Icon, Right of Refresh) -->
-           <button class="icon-btn" @click="openAddModal" title="Add Host">
-             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-             </svg>
-           </button>
+           <!-- Add Host Button -->
+           <TerminalButton variant="primary" @click="openAddModal" class="small-btn">
+             + NEW HOST
+           </TerminalButton>
         </div>
       </div>
 
       <!-- Host List -->
-      <div class="host-list">
-        <div v-if="loading && !hosts.length" class="loading">SCANNING NETWORKS...</div>
-        <div 
-          v-for="h in hosts" 
-          :key="h.id" 
-          class="host-item"
-          @click="$emit('connect', h)"
-        >
-          <div class="host-icon">
-            >_
-          </div>
-          <div class="host-info">
-            <div class="host-alias">{{ h.alias }}</div>
-            <div class="host-detail">{{ h.username }}@{{ h.hostname }}</div>
-          </div>
-          <div class="host-actions">
-             <button class="icon-btn edit-btn" @click.stop="editHost(h)" title="Edit">
-               [EDIT]
-             </button>
-          </div>
+      <div class="host-list-container">
+        <div class="host-list-header">
+            <div class="col-icon">#</div>
+            <div class="col-alias">ALIAS</div>
+            <div class="col-address">ADDRESS</div>
+            <div class="col-actions">ACTIONS</div>
         </div>
-        <div v-if="!hosts.length && !loading" class="empty">NO HOSTS FOUND IN REGISTRY.</div>
+        
+        <div class="host-list scrollbar-custom">
+            <div v-if="loading && !hosts.length" class="loading-state">
+                <span class="spinner"></span> SCANNING NETWORK...
+            </div>
+            
+            <div 
+              v-for="(h, index) in hosts" 
+              :key="h.id" 
+              class="host-item"
+              @click="$emit('connect', h)"
+            >
+              <div class="col-icon text-muted">{{ index + 1 }}</div>
+              <div class="col-alias">
+                  <span class="host-alias-text">{{ h.alias }}</span>
+              </div>
+              <div class="col-address text-muted">
+                  {{ h.username }}<span class="at-symbol">@</span>{{ h.hostname }}
+              </div>
+              <div class="col-actions">
+                  <button class="action-btn connect-btn" title="Quick Connect">
+                    CONNECT
+                  </button>
+                 <button class="icon-btn edit-btn" @click.stop="editHost(h)" title="Edit Configuration">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon>
+                   </svg>
+                 </button>
+              </div>
+            </div>
+            
+            <div v-if="!hosts.length && !loading" class="empty-state">
+                NO HOSTS CONFIGURED. ADD A NEW ENDPOINT.
+            </div>
+        </div>
       </div>
     </TerminalCard>
 
     <!-- Settings Modal -->
-    <div v-if="showSettings" class="modal-backdrop" @click.self="closeSettings">
-        <div class="modal-content">
-            <TerminalCard title="System Preferences">
-                <div class="modal-body">
-                    <div class="setting-group">
-                        <div class="setting-item">
-                            <label>Virtual Keyboard</label>
-                            <div class="toggle-switch">
-                                <span class="toggle-label">{{ useVirtualKeyboard ? 'ON' : 'OFF' }}</span>
-                                <TerminalButton 
-                                   :variant="useVirtualKeyboard ? 'primary' : 'secondary'"
-                                   @click="toggleVirtualKeyboard"
-                                   class="mini-btn"
-                                >
-                                   {{ useVirtualKeyboard ? '[X]' : '[ ]' }}
-                                </TerminalButton>
-                            </div>
-                        </div>
-                        <div class="setting-desc">
-                            Use built-in virtual keyboard for mobile input.
-                        </div>
-                    </div>
-					
-                    <div class="setting-group">
-                        <div class="setting-item">
-                            <label>Max Keep-Alive (min)</label>
-                            <input 
-                                v-model="keepAliveTime" 
-                                class="simple-input" 
-                                type="number" 
-                                placeholder="0"
-                            />
-                        </div>
-                        <div class="setting-desc">
-                            Session active time after backgrounding (0 = disable).
+    <div v-if="showSettings" class="modal-backdrop glass-panel" @click.self="closeSettings">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>SYSTEM PREFERENCES</h3>
+                <button class="close-btn" @click="closeSettings">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="setting-group">
+                    <div class="setting-item">
+                        <label>VIRTUAL KEYBOARD</label>
+                        <div class="toggle-switch">
+                            <span class="toggle-label">{{ useVirtualKeyboard ? 'ENABLED' : 'DISABLED' }}</span>
+                            <button 
+                                class="switch-btn"
+                                :class="{ active: useVirtualKeyboard }"
+                                @click="toggleVirtualKeyboard"
+                            >
+                                <div class="switch-knob"></div>
+                            </button>
                         </div>
                     </div>
+                    <div class="setting-desc">
+                        Enable on-screen inputs for mobile devices.
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <div class="setting-item">
+                        <label>BACKGROUND KEEPALIVE (MIN)</label>
+                        <TerminalInput 
+                            v-model="keepAliveTime" 
+                            type="number" 
+                            class="setting-input-field" 
+                            placeholder="0"
+                        />
+                    </div>
+                    <div class="setting-desc">
+                        Session persistence duration (0 = Disabled).
+                    </div>
+                </div>
 
-                    <div class="setting-group">
-                        <div class="setting-item">
-                            <label>Login Timeout (min)</label>
-                            <input 
-                                v-model="loginTimeout" 
-                                class="simple-input" 
-                                type="number" 
-                                placeholder="30"
-                            />
-                        </div>
-                        <div class="setting-desc">
-                            Auto-logout after inactivity (0 = disable).
-                        </div>
+                <div class="setting-group">
+                    <div class="setting-item">
+                        <label>AUTO-LOGOUT (MIN)</label>
+                        <TerminalInput 
+                            v-model="loginTimeout" 
+                            type="number" 
+                            class="setting-input-field" 
+                            placeholder="30"
+                        />
+                    </div>
+                    <div class="setting-desc">
+                        Security timeout for inactivity.
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <TerminalButton variant="danger" @click="handleLogout">LOGOUT</TerminalButton>
-                    <div class="spacer"></div>
-                    <TerminalButton @click="closeSettings">CLOSE</TerminalButton>
-                </div>
-            </TerminalCard>
+            </div>
+            
+            <div class="modal-footer">
+                <TerminalButton variant="danger" @click="handleLogout">TERMINATE SESSION</TerminalButton>
+                <div class="spacer"></div>
+                <TerminalButton variant="secondary" @click="closeSettings">SAVE & CLOSE</TerminalButton>
+            </div>
         </div>
     </div>
 
     <!-- Add/Edit Host Modal -->
-    <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
-      <div class="modal-content">
-        <TerminalCard :title="isEditMode ? 'Edit System Config' : 'New System Registration'">
-          <div class="modal-body">
-            <TerminalInput v-model="currentHost.alias" prompt="Alias:" />
-            <div class="row">
-              <TerminalInput v-model="currentHost.hostname" prompt="Host:" class="flex-2" />
-              <TerminalInput v-model.number="currentHost.port" prompt="Port:" class="flex-1" />
+    <div v-if="showModal" class="modal-backdrop glass-panel" @click.self="closeModal">
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>{{ isEditMode ? 'EDIT CONFIGURATION' : 'NEW ENDPOINT' }}</h3>
+            <button class="close-btn" @click="closeModal">×</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="form-grid">
+                <TerminalInput v-model="currentHost.alias" prompt="ALIAS" class="full-col" placeholder="Friendly Name" />
+                
+                <TerminalInput v-model="currentHost.hostname" prompt="HOST" class="col-span-2" placeholder="IP / Domain" />
+                <TerminalInput v-model.number="currentHost.port" prompt="PORT" class="col-span-1" type="number" />
+                
+                <TerminalInput v-model="currentHost.username" prompt="USER" class="col-span-2" placeholder="ssh user" />
+                <TerminalInput type="password" v-model="currentHost.password" prompt="PASS" class="col-span-1" placeholder="******" />
             </div>
-            <div class="row">
-              <TerminalInput v-model="currentHost.username" prompt="User:" class="flex-1" />
-              <TerminalInput type="password" v-model="currentHost.password" prompt="Pass:" class="flex-1" />
-            </div>
-          </div>
+        </div>
           
-          <div v-if="testStatus" class="test-status" :class="testStatus.type">
-              [{{ testStatus.type.toUpperCase() }}] {{ testStatus.msg }}
-          </div>
+        <div v-if="testStatus" class="test-status" :class="testStatus.type">
+            <span class="status-icon">
+                {{ testStatus.type === 'success' ? '✓' : '!' }}
+            </span>
+            {{ testStatus.msg }}
+        </div>
 
-          <div class="modal-footer">
-              <TerminalButton variant="secondary" @click="testConnection" :disabled="testing || !canTest">
-                   {{ testing ? 'PINGING...' : 'TEST CONN' }}
-              </TerminalButton>
-              <div class="spacer"></div>
-              <TerminalButton variant="danger" @click="closeModal">CANCEL</TerminalButton>
-              <TerminalButton @click="saveHost" :disabled="loading">SAVE CONFIG</TerminalButton>
-          </div>
-        </TerminalCard>
+        <div class="modal-footer">
+            <TerminalButton variant="secondary" @click="testConnection" :disabled="testing || !canTest">
+                 {{ testing ? 'PINGING...' : 'TEST CONNECTION' }}
+            </TerminalButton>
+            <div class="spacer"></div>
+            <TerminalButton @click="saveHost" :disabled="loading">
+                {{ loading ? 'SAVING...' : 'CONFIRM CONFIG' }}
+            </TerminalButton>
+        </div>
       </div>
     </div>
   </div>
@@ -224,16 +256,9 @@ const fetchHosts = async () => {
       headers: { 'Authorization': `Bearer ${props.token}` }
     });
     if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        hosts.value = data;
-      } else {
-        hosts.value = [];
-      }
+        const data = await res.json();
+        hosts.value = Array.isArray(data) ? data : [];
     } else if (res.status === 401) {
-        // Token invalid or Key missing
-        alert("Session expired or Encryption Key missing. Please login again.");
-        localStorage.removeItem('nexus_token');
         window.location.reload();
     }
   } catch (e) {
@@ -252,8 +277,7 @@ const openAddModal = () => {
 
 const editHost = (host: any) => {
     isEditMode.value = true;
-    // Clone to avoid reactive mess
-    currentHost.value = { ...host, password: '' }; // Password empty on edit
+    currentHost.value = { ...host, password: '' }; 
     testStatus.value = null;
     showModal.value = true;
 };
@@ -277,9 +301,9 @@ const testConnection = async () => {
              })
         });
         if (res.ok) {
-            testStatus.value = { type: 'success', msg: 'Connection Successful!' };
+            testStatus.value = { type: 'success', msg: 'Connection Successful' };
         } else {
-             testStatus.value = { type: 'error', msg: 'Connection Failed: ' + await res.text() };
+             testStatus.value = { type: 'error', msg: 'Failed: ' + await res.text() };
         }
     } catch(e) {
          testStatus.value = { type: 'error', msg: 'Error: ' + e };
@@ -290,10 +314,8 @@ const testConnection = async () => {
 
 const saveHost = async () => {
   if (!currentHost.value.hostname || !currentHost.value.username) return;
-  
-  // Create mode requires password
   if (!isEditMode.value && !currentHost.value.password) {
-      alert("Password required for new host");
+      alert("Password required");
       return;
   }
   
@@ -314,13 +336,8 @@ const saveHost = async () => {
       closeModal();
       fetchHosts();
     } else {
-      if (res.status === 401) {
-          alert("Session expired or Encryption Key missing. Please login again.");
-          localStorage.removeItem('nexus_token');
-          window.location.reload();
-          return;
-      }
-      alert(await res.text());
+      if (res.status === 401) window.location.reload();
+      else alert(await res.text());
     }
   } catch (e) {
     alert('Failed to save host');
@@ -336,6 +353,34 @@ onMounted(fetchHosts);
 .host-manager {
   width: 100%;
 }
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 0 0.5rem;
+}
+
+.user-status {
+    font-size: 0.8rem;
+    color: var(--term-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 8px; height: 8px;
+    background: var(--term-error);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--term-error);
+}
+.status-indicator.online {
+    background: var(--term-success);
+    box-shadow: 0 0 5px var(--term-success);
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -343,220 +388,212 @@ onMounted(fetchHosts);
   margin-bottom: 1rem;
 }
 .info-text {
-  color: var(--term-muted);
+  color: var(--term-text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
 }
 .header-actions {
     display: flex;
-    gap: 8px;
-}
-.setting-group {
-    margin-bottom: 1.5rem;
-}
-
-.setting-item {
-    display: flex;
-    justify-content: space-between;
+    gap: 12px;
     align-items: center;
-    margin-bottom: 0.25rem;
 }
 
-.setting-item label {
-    color: var(--term-text);
+/* Host List Grid */
+.host-list-container {
+    border: 1px solid var(--term-surface-border);
+    border-radius: 4px;
+    background: rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.host-list-header {
+    display: flex;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--term-surface-border);
+    font-size: 0.75rem;
     font-weight: bold;
-}
-
-.setting-desc {
-    font-size: 0.8rem;
-    color: var(--term-muted);
-    line-height: 1.4;
-}
-
-.simple-input {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--term-muted);
-    color: var(--term-secondary);
-    font-family: var(--term-font);
-    font-size: 1rem;
-    width: 60px;
-    text-align: right;
-    padding: 4px;
-    outline: none;
-}
-.simple-input:focus {
-    border-bottom-color: var(--term-text);
-    color: var(--term-text);
-}
-
-.toggle-switch {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.toggle-label {
-    font-size: 0.9rem;
-    color: var(--term-secondary);
-}
-.mini-btn {
-    padding: 2px 8px;
-    min-width: 40px;
-}
-
-.host-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  max-height: 400px;
-  overflow-y: auto;
-  border-top: 1px dashed var(--term-muted);
+    color: var(--term-text-muted);
 }
 
 .host-item {
-  padding: 0.75rem;
-  border-bottom: 1px dashed var(--term-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  transition: all 0.1s;
-}
-.host-item:hover {
-  background: var(--term-text);
-  color: var(--term-bg);
-}
-.host-item:hover .host-detail {
-  color: var(--term-bg);
-  opacity: 0.8;
-}
-
-.host-icon {
-    font-weight: bold;
-}
-
-.host-info {
-    flex: 1;
-}
-.host-alias {
-  font-weight: bold;
-  text-transform: uppercase;
-}
-.host-detail {
-  color: var(--term-secondary);
-  font-size: 0.9em;
-}
-
-.host-actions {
-    opacity: 0;
-}
-.host-item:hover .host-actions {
-    opacity: 1;
-    color: var(--term-bg);
-}
-
-@media (max-width: 600px) {
-    .header {
-        /* Keep header horizontal on mobile now that buttons are icons (smaller) */
-        flex-direction: row; 
-        align-items: center;
-        gap: 0;
-    }
-    .header-actions {
-        width: auto;
-        justify-content: flex-end;
-    }
-
-    .host-actions {
-        opacity: 1; 
-        color: var(--term-text);
-    }
-    .host-item:hover .host-actions {
-        color: var(--term-bg);
-    }
-    .host-item {
-        padding: 1rem;
-        gap: 12px;
-    }
-}
-
-.top-bar {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8px;
+    padding: 1rem;
+    border-bottom: 1px solid var(--term-surface-border);
+    cursor: pointer;
+    align-items: center;
+    transition: background 0.1s;
 }
-.settings-btn {
-    opacity: 0.7;
-    transition: opacity 0.2s;
+
+.host-item:hover {
+    background: rgba(255,255,255,0.05);
 }
-.settings-btn:hover {
-    opacity: 1;
+
+.host-item:last-child {
+    border-bottom: none;
+}
+
+/* Columns */
+.col-icon { width: 40px; text-align: center; }
+.col-alias { flex: 2; font-weight: bold; color: var(--term-primary); }
+.col-address { flex: 3; font-family: monospace; font-size: 0.9rem; }
+.col-actions { flex: 2; display: flex; justify-content: flex-end; gap: 8px; }
+
+.at-symbol { color: var(--term-text-muted); margin: 0 2px; }
+
+.action-btn {
+    background: transparent;
+    border: 1px solid var(--term-primary);
+    color: var(--term-primary);
+    font-family: var(--term-font);
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+}
+.action-btn:hover {
+    background: var(--term-primary);
+    color: #000;
 }
 
 .icon-btn {
     background: transparent;
     border: none;
     cursor: pointer;
-    font-family: var(--term-font);
-    color: inherit;
-    padding: 6px;
+    color: var(--term-text-muted);
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    transition: color 0.2s;
 }
 .icon-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    color: var(--term-text);
 }
 
-/* Modal */
+/* Modals */
 .modal-backdrop {
     position: fixed;
-    top: 0; 
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.8);
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    background: rgba(0,0,0,0.85); /* Darker backdrop */
+    backdrop-filter: blur(5px);
 }
+
 .modal-content {
     width: 90%;
     max-width: 500px;
+    background: #0f0f0f;
+    border: 1px solid var(--term-surface-border);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
 }
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--term-surface-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-header h3 { margin: 0; font-size: 1rem; }
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--term-text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+.close-btn:hover { color: var(--term-text); }
 
 .modal-body {
-    margin-bottom: 1rem;
-}
-
-.test-status {
-    font-size: 13px;
-    margin-bottom: 10px;
-    padding: 8px;
-    border: 1px solid currentColor;
-}
-.test-status.success {
-    color: var(--term-text);
-}
-.test-status.error {
-    color: var(--term-error);
+    padding: 1.5rem;
+    overflow-y: auto;
 }
 
 .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--term-surface-border);
+    background: rgba(255,255,255,0.02);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+}
+.full-col { grid-column: span 3; }
+.col-span-2 { grid-column: span 2; }
+.col-span-1 { grid-column: span 1; }
+
+.spacer { flex: 1; }
+
+/* Switch */
+.toggle-switch {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px dashed var(--term-muted);
 }
-.spacer { flex: 1; }
+.switch-btn {
+    width: 40px;
+    height: 20px;
+    background: var(--term-surface-border);
+    border: 1px solid var(--term-text-muted);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.switch-knob {
+    width: 14px; height: 14px;
+    background: var(--term-text-muted);
+    border-radius: 50%;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: all 0.2s;
+}
+.switch-btn.active {
+    border-color: var(--term-primary);
+    background: rgba(0, 255, 157, 0.1);
+}
+.switch-btn.active .switch-knob {
+    left: 22px;
+    background: var(--term-primary);
+    box-shadow: 0 0 5px var(--term-primary);
+}
 
-.row {
-  display: flex;
-  gap: 12px;
+.test-status {
+    margin: 0 1.5rem 1rem;
+    padding: 0.75rem;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.flex-1 { flex: 1; }
-.flex-2 { flex: 2; }
-.setting-input { width: 80px; text-align: right; }
+.test-status.success { color: var(--term-success); border-color: var(--term-success); background: rgba(0,255,157,0.1); }
+.test-status.error { color: var(--term-error); border-color: var(--term-error); background: rgba(255,51,51,0.1); }
+
+@media (max-width: 600px) {
+    .host-list-header { display: none; }
+    .host-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .col-icon { display: none; }
+    .col-actions { width: 100%; margin-top: 8px; }
+}
 </style>

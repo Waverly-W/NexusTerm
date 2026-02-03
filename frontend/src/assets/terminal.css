@@ -1,22 +1,37 @@
 /* Terminal CLI Design System Tokens */
 :root {
-    /* Colors - Phosphor Monitor Palette */
-    --term-bg: #0a0a0a;
-    --term-text: #33ff00;
-    /* Primary Terminal Green */
+    /* Colors - Modern Cyberpunk Palette */
+    --term-bg: #050505;
+    --term-surface: rgba(20, 20, 20, 0.7);
+    --term-surface-border: rgba(255, 255, 255, 0.1);
+
+    /* Primary: Electric Emerald */
+    --term-primary: #00ff9d;
+    --term-primary-dim: rgba(0, 255, 157, 0.1);
+
+    /* Secondary: Cyber Amber */
     --term-secondary: #ffb000;
-    /* Amber for accents/warnings */
-    --term-muted: #1f521f;
-    /* Dimmed green for borders */
+
+    /* Functional Colors */
+    --term-text: #e0e0e0;
+    --term-text-muted: #808080;
+    --term-success: #00ff9d;
     --term-error: #ff3333;
-    /* Bright Red */
+    --term-accent: #00b8ff;
+    /* Cyan for links/info */
 
     /* Typography */
-    --term-font: 'JetBrains Mono', 'Fira Code', 'VT323', monospace;
+    --term-font: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    /* Fallback to standard monos */
 
     /* Effects */
-    --term-glow: 0 0 5px rgba(51, 255, 0, 0.5);
-    --term-border-style: 1px solid var(--term-muted);
+    --term-glow: 0 0 10px rgba(0, 255, 157, 0.3);
+    --term-glow-strong: 0 0 15px rgba(0, 255, 157, 0.6);
+    --term-border-radius: 8px;
+    --term-blur: blur(12px);
+
+    /* Animation Speeds */
+    --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Global Reset */
@@ -24,12 +39,14 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--term-bg);
+    background-image:
+        radial-gradient(circle at 50% 0%, #1a1a1a 0%, transparent 70%),
+        linear-gradient(0deg, var(--term-bg) 0%, #0a0a0a 100%);
     color: var(--term-text);
     font-family: var(--term-font);
-    -webkit-font-smoothing: none;
-    /* Make it crisp/pixelated */
+    -webkit-font-smoothing: antialiased;
     overflow: hidden;
-    /* App container handles scroll */
+    line-height: 1.6;
 }
 
 /* Base Styles */
@@ -39,50 +56,58 @@ h3,
 h4,
 h5,
 h6 {
+    color: var(--term-primary);
     text-transform: uppercase;
-    font-weight: normal;
+    font-weight: 600;
     margin: 0 0 1rem 0;
-    letter-spacing: 1px;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 2px rgba(0, 255, 157, 0.4);
 }
 
 a {
-    color: var(--term-text);
+    color: var(--term-accent);
     text-decoration: none;
+    transition: all 0.2s;
 }
 
 a:hover {
-    text-decoration: underline;
+    color: var(--term-primary);
     text-shadow: var(--term-glow);
 }
 
 /* Utilities */
-.term-blink {
-    animation: blink 1s step-end infinite;
+.glass-panel {
+    background: var(--term-surface);
+    backdrop-filter: var(--term-blur);
+    -webkit-backdrop-filter: var(--term-blur);
+    border: 1px solid var(--term-surface-border);
+    border-radius: var(--term-border-radius);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-.term-header {
-    border-bottom: var(--term-border-style);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+.text-primary {
+    color: var(--term-primary);
+}
+
+.text-secondary {
+    color: var(--term-secondary);
+}
+
+.text-muted {
+    color: var(--term-text-muted);
+}
+
+.text-error {
+    color: var(--term-error);
+}
+
+.flex-center {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
 
-/* Animations */
-@keyframes blink {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0;
-    }
-}
-
-/* Scanline Overlay */
+/* Scanline Overlay - Subtler */
 body::after {
     content: " ";
     display: block;
@@ -91,28 +116,45 @@ body::after {
     left: 0;
     bottom: 0;
     right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+    background-size: 100% 3px;
     z-index: 9999;
-    background-size: 100% 2px, 3px 100%;
     pointer-events: none;
+    opacity: 0.6;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--term-bg);
-    border-left: 1px solid var(--term-muted);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--term-muted);
-    border: 1px solid var(--term-bg);
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--term-text);
+    background: var(--term-primary);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s var(--ease-out) forwards;
 }
