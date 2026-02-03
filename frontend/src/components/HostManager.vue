@@ -1,12 +1,35 @@
 <template>
   <div class="host-manager">
+    <!-- Top Bar with Settings Icon -->
+    <div class="top-bar">
+        <button class="icon-btn settings-btn" @click="openSettings" title="Settings">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
+    </div>
+
     <TerminalCard title="Available Hosts">
       <div class="header">
         <span class="info-text">SELECT TARGET SYSTEM:</span>
         <div class="header-actions">
-           <button class="icon-btn" @click="fetchHosts" title="Refresh List">[REFRESH]</button>
-           <TerminalButton variant="secondary" @click="openSettings">[SETTINGS]</TerminalButton>
-           <TerminalButton @click="openAddModal">New Host</TerminalButton>
+           <!-- Refresh Button (Icon) -->
+           <button class="icon-btn" @click="fetchHosts" title="Refresh List">
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+             </svg>
+           </button>
+           
+           <!-- Add Host Button (Icon, Right of Refresh) -->
+           <button class="icon-btn" @click="openAddModal" title="Add Host">
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+             </svg>
+           </button>
         </div>
       </div>
 
@@ -352,28 +375,40 @@ onMounted(fetchHosts);
 
 @media (max-width: 600px) {
     .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        /* Keep header horizontal on mobile now that buttons are icons (smaller) */
+        flex-direction: row; 
+        align-items: center;
+        gap: 0;
     }
     .header-actions {
-        width: 100%;
-        justify-content: space-between;
-        flex-wrap: wrap;
+        width: auto;
+        justify-content: flex-end;
     }
 
     .host-actions {
-        opacity: 1; /* Always visible on mobile */
+        opacity: 1; 
         color: var(--term-text);
     }
     .host-item:hover .host-actions {
         color: var(--term-bg);
     }
-    /* Increase gap for touch */
     .host-item {
         padding: 1rem;
         gap: 12px;
     }
+}
+
+.top-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+}
+.settings-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.settings-btn:hover {
+    opacity: 1;
 }
 
 .icon-btn {
@@ -382,6 +417,14 @@ onMounted(fetchHosts);
     cursor: pointer;
     font-family: var(--term-font);
     color: inherit;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* Modal */
