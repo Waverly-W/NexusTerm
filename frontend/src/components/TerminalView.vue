@@ -44,7 +44,7 @@
 
     <div v-if="isConnected" class="mobile-controls">
       <VirtualKeyboard
-        v-if="useVirtualKeyboard"
+        v-if="useVirtualKeyboard && !isKeyboardOpen"
         :ctrl-active="ctrlActive"
         :shift-active="shiftActive"
         @key="handleVirtualKey"
@@ -173,12 +173,25 @@ const initTerminal = () => {
 
 
 
+
+
 const handleResize = () => {
     // Debounce resize
     setTimeout(fitTerm, 50);
 };
 
+// Track native keyboard state
+const isKeyboardOpen = ref(false);
+const initialHeight = ref(window.innerHeight);
+
 const handleViewportResize = () => {
+  if (!window.visualViewport) return;
+  
+  const currentHeight = window.visualViewport.height;
+  // If viewport is significantly smaller than initial, assume keyboard is open
+  // Address bar usage usually takes < 20%, keyboard takes > 25%
+  isKeyboardOpen.value = currentHeight < initialHeight.value * 0.75;
+  
   // Mobile keyboard / visual viewport change
   // Flexbox handles the layout, we just need to refit xterm
   setTimeout(fitTerm, 100);
