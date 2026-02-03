@@ -1,5 +1,5 @@
 <template>
-  <div class="tab-manager">
+  <div class="tab-manager" :style="{ height: managerHeight }">
     <!-- Tab Bar -->
     <div class="tab-bar">
       <div 
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import TerminalView from './TerminalView.vue';
 
 const props = defineProps({
@@ -46,6 +46,7 @@ interface Tab {
 const tabs = ref<Tab[]>([]);
 const activeTabId = ref(0);
 let nextId = 1;
+const managerHeight = ref('100vh');
 
 const addTab = () => {
   const id = nextId++;
@@ -80,8 +81,32 @@ const updateTitle = (id: number, title: string) => {
   }
 };
 
+const updateHeight = () => {
+  if (window.visualViewport) {
+      managerHeight.value = `${window.visualViewport.height}px`;
+  } else {
+      managerHeight.value = `${window.innerHeight}px`;
+  }
+};
+
 onMounted(() => {
   addTab(); // Initial tab
+  if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateHeight);
+      window.visualViewport.addEventListener('scroll', updateHeight);
+      updateHeight();
+  } else {
+      window.addEventListener('resize', updateHeight);
+  }
+});
+
+onUnmounted(() => {
+    if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateHeight);
+        window.visualViewport.removeEventListener('scroll', updateHeight);
+    } else {
+        window.removeEventListener('resize', updateHeight);
+    }
 });
 </script>
 
@@ -89,8 +114,7 @@ onMounted(() => {
 .tab-manager {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh; /* Mobile browser support */
+  height: 100vh; /* Fallback */
   background: var(--term-bg);
   overflow: hidden;
 }
