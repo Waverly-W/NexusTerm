@@ -61,6 +61,8 @@
 
     <!-- Settings Modal -->
     <div v-if="showSettings" class="modal-backdrop" @click.self="closeSettings">
+        <div class="modal-content">
+            <TerminalCard title="System Preferences">
                 <div class="modal-body">
                     <div class="setting-group">
                         <div class="setting-item">
