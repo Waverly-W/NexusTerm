@@ -99,6 +99,7 @@ const form = ref({
 const terminalContainer = ref<HTMLElement | null>(null);
 const ctrlActive = ref(false);
 const currentFontSize = ref(14);
+const activeSessionId = ref<string | null>(sessionStorage.getItem('nexus_session_id'));
 
 let term: Terminal | null = null;
 let socket: WebSocket | null = null;
@@ -115,6 +116,10 @@ watch(() => props.visible, (newVal) => {
 
 const handleHostConnect = (host: any) => {
     emit('update:title', host.alias || host.hostname);
+    // If we have an active session for a different host, we should probably clear it
+    // But for now, simple "connect" overrides
+    activeSessionId.value = null; 
+    sessionStorage.removeItem('nexus_session_id');
     connectWithHostID(host.id);
 };
 
@@ -294,15 +299,26 @@ const connect = (hostID?: number) => {
   socket.onopen = () => {
     const payload: any = { t: 'connect' };
     
-    if (hostID) {
-        payload.host_id = hostID;
-        payload.host = '';
-        payload.user = '';
-        payload.password = '';
+    const keepAlive = parseInt(localStorage.getItem('nexus_keep_alive') || '0');
+    
+    // Resume if we have a session ID and no explicit hostID (re-open)
+    // Or if we just want to try resuming current context
+    if (activeSessionId.value && !hostID) {
+         payload.session_id = activeSessionId.value;
+         // Send keepAlive update as well
+         payload.keep_alive = keepAlive;
     } else {
-        payload.host = form.value.host;
-        payload.user = form.value.user;
-        payload.password = form.value.password;
+        payload.keep_alive = keepAlive;
+        if (hostID) {
+            payload.host_id = hostID;
+            payload.host = '';
+            payload.user = '';
+            payload.password = '';
+        } else {
+            payload.host = form.value.host;
+            payload.user = form.value.user;
+            payload.password = form.value.password;
+        }
     }
     
     socket?.send(JSON.stringify(payload));
@@ -314,9 +330,18 @@ const connect = (hostID?: number) => {
         const msg = JSON.parse(event.data);
         if (msg.status === 'connected') {
           isConnected.value = true;
+          if (msg.id) {
+            activeSessionId.value = msg.id;
+            sessionStorage.setItem('nexus_session_id', msg.id);
+          }
           setTimeout(handleViewportResize, 100);
         } else if (msg.error) {
           error.value = msg.error;
+          if (activeSessionId.value) {
+             // If resume failed, clear session
+             activeSessionId.value = null;
+             sessionStorage.removeItem('nexus_session_id');
+          }
           socket?.close();
         }
       } catch (e) {
@@ -341,8 +366,16 @@ const connect = (hostID?: number) => {
   };
 };
 
+// Check for auto-resume
 onMounted(() => {
   initTerminal();
+  if (activeSessionId.value) {
+      // Auto-connect to resume?
+      // For now, let's just wait for user action or maybe trigger if visible?
+      // But we don't know the host info... 
+      // Actually, if we send session_id, we don't need host info.
+      connect();
+  }
 });
 
 onBeforeUnmount(() => {

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
@@ -102,6 +103,47 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
+				// Check for Session Resumption
+				sessionID, _ := msg["session_id"].(string)
+				keepAliveMin, _ := msg["keep_alive"].(float64)
+
+				if sessionID != "" && h.Manager != nil {
+					existingSession := h.Manager.Get(sessionID)
+					if existingSession != nil {
+						// Resume
+						log.Printf("Resuming session %s", sessionID)
+						existingSession.AttachWebSocket(ws)
+						currentSession = existingSession
+						
+						// Update KeepAlive if provided (optional, or stick to initial)
+						if keepAliveMin > 0 {
+							existingSession.MaxKeepAlive = time.Duration(keepAliveMin) * time.Minute
+						}
+
+						ws.WriteJSON(map[string]string{
+							"status": "connected",
+							"id": currentSession.ID,
+						})
+
+						// Send recent history
+						// Need thread safety for reading history? RingBuffer is sync-safe-ish but verify
+						hist := existingSession.HistoryBuf.Bytes()
+						if len(hist) > 0 {
+							ws.WriteMessage(websocket.BinaryMessage, hist)
+						}
+
+						// Refresh size?
+						existingSession.SSHSession.WindowChange(existingSession.Dimensions.Rows, existingSession.Dimensions.Cols)
+						
+						continue
+					} else {
+						// Session not found (expired?)
+						ws.WriteJSON(map[string]string{"error": "session_expired_or_not_found"})
+						// Client should try fresh connect
+						continue
+					}
+				}
+
 				hostAddr, _ := msg["host"].(string)
 				port := 22
 				user, _ := msg["user"].(string)
@@ -122,7 +164,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 					} else {
 						// Log this error
-						log.Printf("Failed to decrypt password for hostID %d user %d: %v", hostID, userID, err)
+						log.Printf("Failed to decrypt password for hostID %0.f user %d: %v", hostID, userID, err)
 					}
 				} else {
 					if hostID > 0 {
@@ -201,6 +243,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					h.Manager.Add(currentSession)
 				}
 				
+				// Set KeepAlive
+				if keepAliveMin > 0 {
+					currentSession.MaxKeepAlive = time.Duration(keepAliveMin) * time.Minute
+				}
+				
 				// Start Pumper in background
 				go currentSession.StartPumper()
 				// Also read stderr if separated? Assume merged by PTY.
@@ -232,7 +279,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 	if currentSession != nil {
 		if h.Manager != nil {
-			h.Manager.Remove(currentSession.ID)
+			if currentSession.MaxKeepAlive > 0 {
+				log.Printf("Detaching session %s (KeepAlive: %v)", currentSession.ID, currentSession.MaxKeepAlive)
+				currentSession.DetachWebSocket()
+				currentSession.KeepAliveUntil = time.Now().Add(currentSession.MaxKeepAlive)
+			} else {
+				h.Manager.Remove(currentSession.ID)
+			}
 		} else {
 			currentSession.Close()
 		}

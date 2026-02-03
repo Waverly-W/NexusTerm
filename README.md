@@ -10,7 +10,8 @@ NexusTerm is a modern, responsive web-based SSH client designed for seamless rem
 
 ## Features
 
--   **📱 Mobile-First Design**: Optimized touch controls, virtual keyboard support, and responsive layout.
+-   **📱 Mobile-First Design**: Optimized touch controls, virtual keyboard support with dedicated symbol row and secondary layer.
+-   **⌨️ Intelligent Input**: Smart toggle functionality that automatically switches between PC-like virtual keyboard and native device keyboard.
 -   **📑 Multi-Tab Interface**: Manage multiple SSH sessions simultaneously in a tabbed view.
 -   **🔒 Secure Host Management**: Save hosts with encrypted credentials (AES-256).
 -   **🚀 Simple Deployment**: One-click deployment via Docker.

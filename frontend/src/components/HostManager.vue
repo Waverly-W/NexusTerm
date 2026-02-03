@@ -52,6 +52,14 @@
                     <div class="setting-help">
                         Use the built-in virtual keyboard instead of the system keyboard. Recommended for mobile terminals.
                     </div>
+					
+					<div class="setting-item">
+                        <label>Max Keep-Alive (min):</label>
+                        <TerminalInput v-model="keepAliveTime" class="setting-input" type="number" />
+                    </div>
+                    <div class="setting-help">
+                        Time to keep session active after app background/close (0 = disable).
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <TerminalButton @click="closeSettings">CLOSE</TerminalButton>
@@ -116,12 +124,14 @@ const testStatus = ref<{type: string, msg: string} | null>(null);
 
 // Settings
 const useVirtualKeyboard = ref(localStorage.getItem('nexus_use_vk') !== 'false'); // Default TRUE
+const keepAliveTime = ref(localStorage.getItem('nexus_keep_alive') || '0');
 
 const openSettings = () => {
     showSettings.value = true;
 };
 
 const closeSettings = () => {
+    localStorage.setItem('nexus_keep_alive', keepAliveTime.value);
     showSettings.value = false;
 };
 
@@ -388,4 +398,5 @@ onMounted(fetchHosts);
 }
 .flex-1 { flex: 1; }
 .flex-2 { flex: 2; }
+.setting-input { width: 80px; text-align: right; }
 </style>

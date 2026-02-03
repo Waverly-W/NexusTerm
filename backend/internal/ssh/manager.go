@@ -59,10 +59,33 @@ func (sm *SessionManager) cleanup() {
 	
 	now := time.Now()
 	for id, s := range sm.sessions {
-		// Close session if inactive for more than 1 hour
-		if now.Sub(s.LastActive) > time.Hour {
-			s.Close()
-			delete(sm.sessions, id)
+		// Check if active or detached
+		s.WsLock.Lock()
+		active := s.WsConn != nil
+		s.WsLock.Unlock()
+
+		if !active {
+			// Detached mode
+			// If KeepAliveUntil is set and specific time holds
+			if !s.KeepAliveUntil.IsZero() {
+				if now.After(s.KeepAliveUntil) {
+					s.Close()
+					delete(sm.sessions, id)
+				}
+			} else {
+				// No keepalive set, remove immediately (or treat as abandon)
+				// Actually handler should have removed it if MaxKeepAlive was 0.
+				// But as a fallback, we remove here.
+				s.Close()
+				delete(sm.sessions, id)
+			}
+		} else {
+			// Active mode
+			// Close session if inactive for more than 1 hour (auto-logout idle users)
+			if now.Sub(s.LastActive) > time.Hour {
+				s.Close()
+				delete(sm.sessions, id)
+			}
 		}
 	}
 }

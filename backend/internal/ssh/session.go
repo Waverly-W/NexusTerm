@@ -29,8 +29,10 @@ type Session struct {
 	WsConn *websocket.Conn
 	WsLock sync.Mutex
 	
-	LastActive time.Time
-	Dimensions WindowSize
+	LastActive     time.Time
+	Dimensions     WindowSize
+	MaxKeepAlive   time.Duration
+	KeepAliveUntil time.Time
 }
 
 // NewSession creates a new session
@@ -63,7 +65,28 @@ func (s *Session) WriteToWebSocket(data []byte) error {
 	}
 	
 	// Binary message for raw terminal data
-	return s.WsConn.WriteMessage(websocket.BinaryMessage, data)
+	s.WsLock.Lock()
+	defer s.WsLock.Unlock()
+	if s.WsConn != nil {
+		return s.WsConn.WriteMessage(websocket.BinaryMessage, data)
+	}
+	return nil
+}
+
+// AttachWebSocket attaches a new websocket to the session
+func (s *Session) AttachWebSocket(ws *websocket.Conn) {
+	s.WsLock.Lock()
+	defer s.WsLock.Unlock()
+	
+	// Close existing if any (should have been detached, but safety first)
+	if s.WsConn != nil {
+		s.WsConn.Close()
+	}
+	
+	s.WsConn = ws
+	// Reset keepalive since we are active again
+	s.KeepAliveUntil = time.Time{} 
+	s.LastActive = time.Now()
 }
 
 // Close closes the SSH session and connection
