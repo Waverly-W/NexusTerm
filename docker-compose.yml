@@ -14,4 +14,8 @@ services:
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - DISABLE_REGISTRATION=${DISABLE_REGISTRATION:-false}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      # Allow accessing host's SSH via 'localhost' from within container
+      - "localhost:host-gateway" 
     restart: unless-stopped
