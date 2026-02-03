@@ -350,6 +350,32 @@ onMounted(fetchHosts);
     color: var(--term-bg);
 }
 
+@media (max-width: 600px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .host-actions {
+        opacity: 1; /* Always visible on mobile */
+        color: var(--term-text);
+    }
+    .host-item:hover .host-actions {
+        color: var(--term-bg);
+    }
+    /* Increase gap for touch */
+    .host-item {
+        padding: 1rem;
+        gap: 12px;
+    }
+}
+
 .icon-btn {
     background: transparent;
     border: none;
