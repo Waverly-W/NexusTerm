@@ -138,6 +138,10 @@ func main() {
 		if r.Method == "GET" {
 			hosts, err := hostSvc.List(userID)
 			if err != nil {
+				if err == host.ErrKeyMissing {
+					http.Error(w, err.Error(), http.StatusUnauthorized)
+					return
+				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -149,6 +153,10 @@ func main() {
 				return
 			}
 			if err := hostSvc.Add(userID, h); err != nil {
+				if err == host.ErrKeyMissing {
+					http.Error(w, err.Error(), http.StatusUnauthorized)
+					return
+				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -160,6 +168,10 @@ func main() {
 				return
 			}
 			if err := hostSvc.Update(userID, h); err != nil {
+				if err == host.ErrKeyMissing {
+					http.Error(w, err.Error(), http.StatusUnauthorized)
+					return
+				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}

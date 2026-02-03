@@ -8,6 +8,8 @@ import (
 	"github.com/nexus/term/internal/security"
 )
 
+var ErrKeyMissing = errors.New("key missing: valid session required (try re-login)")
+
 type Host struct {
 	ID       int    `json:"id"`
 	Alias    string `json:"alias"`
@@ -40,7 +42,7 @@ func (s *Service) List(userID int) ([]Host, error) {
 func (s *Service) Add(userID int, h Host) error {
 	key := auth.GetUserKey(userID)
 	if key == nil {
-		return errors.New("key missing: valid session required (try re-login)")
+		return ErrKeyMissing
 	}
 
 	encryptedPass, err := security.Encrypt([]byte(h.Password), key)
@@ -63,7 +65,7 @@ func (s *Service) Update(userID int, h Host) error {
     // Only update password if provided
     if h.Password != "" {
         if key == nil {
-            return errors.New("key missing")
+            return ErrKeyMissing
         }
         encryptedPass, err := security.Encrypt([]byte(h.Password), key)
         if err != nil {
@@ -87,9 +89,10 @@ func (s *Service) GetDecryptedPassword(userID, hostID int) (string, error) {
 		return "", err
 	}
 	
+	// ...
 	key := auth.GetUserKey(userID)
 	if key == nil {
-		return "", errors.New("key missing")
+		return "", ErrKeyMissing
 	}
 	
 	decrypted, err := security.Decrypt(encrypted, key)

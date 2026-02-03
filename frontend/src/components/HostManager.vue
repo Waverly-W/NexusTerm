@@ -112,8 +112,9 @@
                             Auto-logout after inactivity (0 = disable).
                         </div>
                     </div>
-                </div>
                 <div class="modal-footer">
+                    <TerminalButton variant="danger" @click="handleLogout">LOGOUT</TerminalButton>
+                    <div class="spacer"></div>
                     <TerminalButton @click="closeSettings">CLOSE</TerminalButton>
                 </div>
             </TerminalCard>
@@ -190,6 +191,13 @@ const closeSettings = () => {
     showSettings.value = false;
 };
 
+const handleLogout = () => {
+    if (confirm("Confirm System Logout?")) {
+        localStorage.removeItem('nexus_token');
+        window.location.reload();
+    }
+};
+
 const toggleVirtualKeyboard = () => {
     useVirtualKeyboard.value = !useVirtualKeyboard.value;
     localStorage.setItem('nexus_use_vk', String(useVirtualKeyboard.value));
@@ -221,6 +229,11 @@ const fetchHosts = async () => {
       } else {
         hosts.value = [];
       }
+    } else if (res.status === 401) {
+        // Token invalid or Key missing
+        alert("Session expired or Encryption Key missing. Please login again.");
+        localStorage.removeItem('nexus_token');
+        window.location.reload();
     }
   } catch (e) {
     console.error(e);
@@ -300,6 +313,12 @@ const saveHost = async () => {
       closeModal();
       fetchHosts();
     } else {
+      if (res.status === 401) {
+          alert("Session expired or Encryption Key missing. Please login again.");
+          localStorage.removeItem('nexus_token');
+          window.location.reload();
+          return;
+      }
       alert(await res.text());
     }
   } catch (e) {
