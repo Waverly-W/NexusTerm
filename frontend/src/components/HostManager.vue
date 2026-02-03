@@ -3,7 +3,10 @@
     <TerminalCard title="Available Hosts">
       <div class="header">
         <span class="info-text">SELECT TARGET SYSTEM:</span>
-        <TerminalButton @click="openAddModal">New Host</TerminalButton>
+        <div class="header-actions">
+           <TerminalButton variant="secondary" @click="openSettings">[SETTINGS]</TerminalButton>
+           <TerminalButton @click="openAddModal">New Host</TerminalButton>
+        </div>
       </div>
 
       <!-- Host List -->
@@ -31,6 +34,31 @@
         <div v-if="!hosts.length && !loading" class="empty">NO HOSTS FOUND IN REGISTRY.</div>
       </div>
     </TerminalCard>
+
+    <!-- Settings Modal -->
+    <div v-if="showSettings" class="modal-backdrop" @click.self="closeSettings">
+        <div class="modal-content">
+            <TerminalCard title="System Preferences">
+                <div class="modal-body">
+                    <div class="setting-item">
+                        <label>Virtual Keyboard:</label>
+                        <TerminalButton 
+                           :variant="useVirtualKeyboard ? 'primary' : 'secondary'"
+                           @click="toggleVirtualKeyboard"
+                        >
+                           {{ useVirtualKeyboard ? 'ENABLED' : 'DISABLED' }}
+                        </TerminalButton>
+                    </div>
+                    <div class="setting-help">
+                        Use the built-in virtual keyboard instead of the system keyboard. Recommended for mobile terminals.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <TerminalButton @click="closeSettings">CLOSE</TerminalButton>
+                </div>
+            </TerminalCard>
+        </div>
+    </div>
 
     <!-- Add/Edit Host Modal -->
     <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
@@ -80,10 +108,27 @@ const emit = defineEmits(['connect']);
 
 const hosts = ref<any[]>([]);
 const showModal = ref(false);
+const showSettings = ref(false);
 const isEditMode = ref(false);
 const loading = ref(false);
 const testing = ref(false);
 const testStatus = ref<{type: string, msg: string} | null>(null);
+
+// Settings
+const useVirtualKeyboard = ref(localStorage.getItem('nexus_use_vk') !== 'false'); // Default TRUE
+
+const openSettings = () => {
+    showSettings.value = true;
+};
+
+const closeSettings = () => {
+    showSettings.value = false;
+};
+
+const toggleVirtualKeyboard = () => {
+    useVirtualKeyboard.value = !useVirtualKeyboard.value;
+    localStorage.setItem('nexus_use_vk', String(useVirtualKeyboard.value));
+};
 
 const currentHost = ref({
   id: 0,
@@ -214,6 +259,23 @@ onMounted(fetchHosts);
 }
 .info-text {
   color: var(--term-muted);
+}
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--term-muted);
+}
+.setting-help {
+    font-size: 0.8rem;
+    color: var(--term-muted);
+    margin-bottom: 1.5rem;
 }
 
 .host-list {

@@ -43,7 +43,16 @@
     </div>
 
     <div v-if="isConnected" class="mobile-controls">
+      <VirtualKeyboard
+        v-if="useVirtualKeyboard"
+        :ctrl-active="ctrlActive"
+        :shift-active="shiftActive"
+        @key="handleVirtualKey"
+        @toggle-ctrl="ctrlActive = !ctrlActive"
+        @toggle-shift="shiftActive = !shiftActive"
+      />
       <SmartToolbar 
+        v-else
         :ctrl-active="ctrlActive"
         @key="handleToolbarKey"
         @input="handleToolbarInput"
@@ -64,6 +73,7 @@ import 'xterm/css/xterm.css';
 import Scrubber from './MobileControls/Scrubber.vue';
 import Zoomer from './MobileControls/Zoomer.vue';
 import SmartToolbar from './MobileControls/SmartToolbar.vue';
+import VirtualKeyboard from './MobileControls/VirtualKeyboard.vue';
 import HostManager from './HostManager.vue';
 import TerminalButton from './ui/TerminalButton.vue';
 import TerminalCard from './ui/TerminalCard.vue';
@@ -97,6 +107,8 @@ let fitAddon: FitAddon | null = null;
 // Watch visibility to fit terminal when tab becomes active
 watch(() => props.visible, (newVal) => {
     if (newVal) {
+        // Reload settings
+        useVirtualKeyboard.value = localStorage.getItem('nexus_use_vk') !== 'false';
         setTimeout(handleViewportResize, 50); // Small delay to allow layout
     }
 });
@@ -213,6 +225,46 @@ const handleToolbarInput = (char: string) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
          socket.send(new TextEncoder().encode(char));
     }
+};
+
+// Virtual Keyboard Logic
+const useVirtualKeyboard = ref(localStorage.getItem('nexus_use_vk') !== 'false');
+const shiftActive = ref(false);
+
+const handleVirtualKey = (key: string) => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+    let data = key;
+    
+    // Special Keys
+    if (key === 'Enter') data = '\r';
+    if (key === 'Backspace') data = '\x7f';
+    if (key === 'Tab') data = '\t';
+    if (key === 'Escape') data = '\x1b';
+    if (key === 'ArrowUp') data = '\x1b[A';
+    if (key === 'ArrowDown') data = '\x1b[B';
+    if (key === 'ArrowRight') data = '\x1b[C';
+    if (key === 'ArrowLeft') data = '\x1b[D';
+    if (key === 'Space') data = ' ';
+
+    // Shift Modifier for letters
+    if (shiftActive.value && key.length === 1 && /[a-z]/.test(key)) {
+        data = key.toUpperCase();
+        shiftActive.value = false; // Auto-off shift
+    }
+
+    // Ctrl Modifier
+    if (ctrlActive.value && key.length === 1) {
+        const charCode = key.toUpperCase().charCodeAt(0);
+        if (charCode >= 64 && charCode <= 95) {
+             data = String.fromCharCode(charCode - 64);
+        } else if (charCode >= 97 && charCode <= 122) {
+             data = String.fromCharCode(charCode - 96);
+        }
+        ctrlActive.value = false;
+    }
+
+    socket.send(new TextEncoder().encode(data));
 };
 
 const connectWithHostID = (hostID: number) => {
