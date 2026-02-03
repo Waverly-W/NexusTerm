@@ -4,6 +4,7 @@
       <div class="header">
         <span class="info-text">SELECT TARGET SYSTEM:</span>
         <div class="header-actions">
+           <button class="icon-btn" @click="fetchHosts" title="Refresh List">[REFRESH]</button>
            <TerminalButton variant="secondary" @click="openSettings">[SETTINGS]</TerminalButton>
            <TerminalButton @click="openAddModal">New Host</TerminalButton>
         </div>
@@ -59,6 +60,13 @@
                     </div>
                     <div class="setting-help">
                         Time to keep session active after app background/close (0 = disable).
+                    </div>
+                    <div class="setting-item">
+                        <label>Login Timeout (min):</label>
+                        <TerminalInput v-model="loginTimeout" class="setting-input" type="number" />
+                    </div>
+                    <div class="setting-help">
+                        Auto-logout after inactivity (0 = disable).
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -125,6 +133,7 @@ const testStatus = ref<{type: string, msg: string} | null>(null);
 // Settings
 const useVirtualKeyboard = ref(localStorage.getItem('nexus_use_vk') !== 'false'); // Default TRUE
 const keepAliveTime = ref(localStorage.getItem('nexus_keep_alive') || '0');
+const loginTimeout = ref(localStorage.getItem('nexus_login_timeout') || '30');
 
 const openSettings = () => {
     showSettings.value = true;
@@ -132,6 +141,8 @@ const openSettings = () => {
 
 const closeSettings = () => {
     localStorage.setItem('nexus_keep_alive', keepAliveTime.value);
+    localStorage.setItem('nexus_login_timeout', loginTimeout.value);
+    localStorage.setItem('nexus_use_vk', String(useVirtualKeyboard.value));
     showSettings.value = false;
 };
 
