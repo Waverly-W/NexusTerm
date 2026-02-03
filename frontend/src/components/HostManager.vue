@@ -61,35 +61,54 @@
 
     <!-- Settings Modal -->
     <div v-if="showSettings" class="modal-backdrop" @click.self="closeSettings">
-        <div class="modal-content">
-            <TerminalCard title="System Preferences">
                 <div class="modal-body">
-                    <div class="setting-item">
-                        <label>Virtual Keyboard:</label>
-                        <TerminalButton 
-                           :variant="useVirtualKeyboard ? 'primary' : 'secondary'"
-                           @click="toggleVirtualKeyboard"
-                        >
-                           {{ useVirtualKeyboard ? 'ENABLED' : 'DISABLED' }}
-                        </TerminalButton>
-                    </div>
-                    <div class="setting-help">
-                        Use the built-in virtual keyboard instead of the system keyboard. Recommended for mobile terminals.
+                    <div class="setting-group">
+                        <div class="setting-item">
+                            <label>Virtual Keyboard</label>
+                            <div class="toggle-switch">
+                                <span class="toggle-label">{{ useVirtualKeyboard ? 'ON' : 'OFF' }}</span>
+                                <TerminalButton 
+                                   :variant="useVirtualKeyboard ? 'primary' : 'secondary'"
+                                   @click="toggleVirtualKeyboard"
+                                   class="mini-btn"
+                                >
+                                   {{ useVirtualKeyboard ? '[X]' : '[ ]' }}
+                                </TerminalButton>
+                            </div>
+                        </div>
+                        <div class="setting-desc">
+                            Use built-in virtual keyboard for mobile input.
+                        </div>
                     </div>
 					
-					<div class="setting-item">
-                        <label>Max Keep-Alive (min):</label>
-                        <TerminalInput v-model="keepAliveTime" class="setting-input" type="number" />
+                    <div class="setting-group">
+                        <div class="setting-item">
+                            <label>Max Keep-Alive (min)</label>
+                            <input 
+                                v-model="keepAliveTime" 
+                                class="simple-input" 
+                                type="number" 
+                                placeholder="0"
+                            />
+                        </div>
+                        <div class="setting-desc">
+                            Session active time after backgrounding (0 = disable).
+                        </div>
                     </div>
-                    <div class="setting-help">
-                        Time to keep session active after app background/close (0 = disable).
-                    </div>
-                    <div class="setting-item">
-                        <label>Login Timeout (min):</label>
-                        <TerminalInput v-model="loginTimeout" class="setting-input" type="number" />
-                    </div>
-                    <div class="setting-help">
-                        Auto-logout after inactivity (0 = disable).
+
+                    <div class="setting-group">
+                        <div class="setting-item">
+                            <label>Login Timeout (min)</label>
+                            <input 
+                                v-model="loginTimeout" 
+                                class="simple-input" 
+                                type="number" 
+                                placeholder="30"
+                            />
+                        </div>
+                        <div class="setting-desc">
+                            Auto-logout after inactivity (0 = disable).
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -308,18 +327,57 @@ onMounted(fetchHosts);
     display: flex;
     gap: 8px;
 }
+.setting-group {
+    margin-bottom: 1.5rem;
+}
+
 .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed var(--term-muted);
+    margin-bottom: 0.25rem;
 }
-.setting-help {
+
+.setting-item label {
+    color: var(--term-text);
+    font-weight: bold;
+}
+
+.setting-desc {
     font-size: 0.8rem;
     color: var(--term-muted);
-    margin-bottom: 1.5rem;
+    line-height: 1.4;
+}
+
+.simple-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--term-muted);
+    color: var(--term-secondary);
+    font-family: var(--term-font);
+    font-size: 1rem;
+    width: 60px;
+    text-align: right;
+    padding: 4px;
+    outline: none;
+}
+.simple-input:focus {
+    border-bottom-color: var(--term-text);
+    color: var(--term-text);
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.toggle-label {
+    font-size: 0.9rem;
+    color: var(--term-secondary);
+}
+.mini-btn {
+    padding: 2px 8px;
+    min-width: 40px;
 }
 
 .host-list {
