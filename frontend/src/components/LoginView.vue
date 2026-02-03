@@ -91,8 +91,13 @@ const performAuth = async () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  height: 100dvh; /* Mobile support */
   background: var(--term-bg);
   color: var(--term-text);
+  padding: 1rem;
+  /* Push content up slightly on mobile to avoid keyboard overlap if height shrinks */
+  padding-bottom: 20vh;
+  box-sizing: border-box;
 }
 
 .login-card {

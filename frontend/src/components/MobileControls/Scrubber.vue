@@ -25,16 +25,17 @@ const emit = defineEmits<{
 const isDragging = ref(false);
 const visualOffset = ref(0);
 
-let startX = 0;
-let lastEmittedStep = 0;
-const STEP_SIZE = 12; // Pixels per cursor move
+let lastX = 0;
+let accumulator = 0;
+const STEP_SIZE = 15; // Pixels per cursor move
 
 const onTouchStart = (e: TouchEvent) => {
   isDragging.value = true;
   if (e.touches[0]) {
-    startX = e.touches[0].clientX;
+    lastX = e.touches[0].clientX;
   }
-  lastEmittedStep = 0;
+  accumulator = 0;
+  visualOffset.value = 0;
 };
 
 const onTouchMove = (e: TouchEvent) => {
@@ -42,40 +43,38 @@ const onTouchMove = (e: TouchEvent) => {
   
   if (!e.touches[0]) return;
   const currentX = e.touches[0].clientX;
-  const totalDelta = currentX - startX;
+  const delta = currentX - lastX;
+  lastX = currentX; // Update reference for next frame
   
-  // Visual Feedback: Apply resistance/damping as you pull further
-  // Logarithmic damping for "rubber band" feel
-  const sign = Math.sign(totalDelta);
-  const absDelta = Math.abs(totalDelta);
-  // Damping function: y = x / (1 + x/limit) * damping_factor
-  // Or simple sqrt damping: sign * sqrt(abs) * factor
-  visualOffset.value = sign * Math.pow(absDelta, 0.8);
+  accumulator += delta;
 
-  // Event Logic: Discrete steps based on raw linear distance
-  const currentStep = Math.floor(Math.abs(totalDelta) / STEP_SIZE);
-  
-  if (currentStep > lastEmittedStep) {
-    const stepsToEmit = currentStep - lastEmittedStep;
-    const direction = totalDelta > 0 ? 'right' : 'left';
-    
-    for (let i = 0; i < stepsToEmit; i++) {
-        emit('scroll', direction);
-        // Haptic feedback if available (subtle tick)
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(5);
-        }
-    }
-    
-    lastEmittedStep = currentStep;
+  // Visual Feedback: elasticity based on accumulator
+  // Clamp visual offset to avoid drifting too far visually
+  visualOffset.value = Math.max(-40, Math.min(40, accumulator * 0.5));
+
+  // Event Logic: Consume accumulator
+  while (Math.abs(accumulator) >= STEP_SIZE) {
+      const direction = accumulator > 0 ? 'right' : 'left';
+      emit('scroll', direction);
+      
+      // Haptic feedback
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(5);
+      }
+
+      // Reduce accumulator by one step, preserving the remainder
+      if (accumulator > 0) {
+          accumulator -= STEP_SIZE;
+      } else {
+          accumulator += STEP_SIZE;
+      }
   }
 };
 
 const onTouchEnd = () => {
   isDragging.value = false;
   visualOffset.value = 0;
-  startX = 0;
-  lastEmittedStep = 0;
+  accumulator = 0;
 };
 </script>
 
