@@ -1,37 +1,22 @@
 /* Terminal CLI Design System Tokens */
 :root {
-    /* Colors - Modern Cyberpunk Palette */
-    --term-bg: #050505;
-    --term-surface: rgba(20, 20, 20, 0.7);
-    --term-surface-border: rgba(255, 255, 255, 0.1);
-
-    /* Primary: Electric Emerald */
-    --term-primary: #00ff9d;
-    --term-primary-dim: rgba(0, 255, 157, 0.1);
-
-    /* Secondary: Cyber Amber */
+    /* Colors - Phosphor Monitor Palette */
+    --term-bg: #0a0a0a;
+    --term-text: #33ff00;
+    /* Primary Terminal Green */
     --term-secondary: #ffb000;
-
-    /* Functional Colors */
-    --term-text: #e0e0e0;
-    --term-text-muted: #808080;
-    --term-success: #00ff9d;
+    /* Amber for accents/warnings */
+    --term-muted: #1f521f;
+    /* Dimmed green for borders */
     --term-error: #ff3333;
-    --term-accent: #00b8ff;
-    /* Cyan for links/info */
+    /* Bright Red */
 
     /* Typography */
-    --term-font: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    /* Fallback to standard monos */
+    --term-font: 'JetBrains Mono', 'Fira Code', 'VT323', monospace;
 
     /* Effects */
-    --term-glow: 0 0 10px rgba(0, 255, 157, 0.3);
-    --term-glow-strong: 0 0 15px rgba(0, 255, 157, 0.6);
-    --term-border-radius: 8px;
-    --term-blur: blur(12px);
-
-    /* Animation Speeds */
-    --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --term-glow: 0 0 5px rgba(51, 255, 0, 0.5);
+    --term-border-style: 1px solid var(--term-muted);
 }
 
 /* Global Reset */
@@ -39,14 +24,12 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--term-bg);
-    background-image:
-        radial-gradient(circle at 50% 0%, #1a1a1a 0%, transparent 70%),
-        linear-gradient(0deg, var(--term-bg) 0%, #0a0a0a 100%);
     color: var(--term-text);
     font-family: var(--term-font);
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: none;
+    /* Make it crisp/pixelated */
     overflow: hidden;
-    line-height: 1.6;
+    /* App container handles scroll */
 }
 
 /* Base Styles */
@@ -56,58 +39,50 @@ h3,
 h4,
 h5,
 h6 {
-    color: var(--term-primary);
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: normal;
     margin: 0 0 1rem 0;
-    letter-spacing: 0.05em;
-    text-shadow: 0 0 2px rgba(0, 255, 157, 0.4);
+    letter-spacing: 1px;
 }
 
 a {
-    color: var(--term-accent);
+    color: var(--term-text);
     text-decoration: none;
-    transition: all 0.2s;
 }
 
 a:hover {
-    color: var(--term-primary);
+    text-decoration: underline;
     text-shadow: var(--term-glow);
 }
 
 /* Utilities */
-.glass-panel {
-    background: var(--term-surface);
-    backdrop-filter: var(--term-blur);
-    -webkit-backdrop-filter: var(--term-blur);
-    border: 1px solid var(--term-surface-border);
-    border-radius: var(--term-border-radius);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+.term-blink {
+    animation: blink 1s step-end infinite;
 }
 
-.text-primary {
-    color: var(--term-primary);
-}
-
-.text-secondary {
-    color: var(--term-secondary);
-}
-
-.text-muted {
-    color: var(--term-text-muted);
-}
-
-.text-error {
-    color: var(--term-error);
-}
-
-.flex-center {
+.term-header {
+    border-bottom: var(--term-border-style);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
 }
 
-/* Scanline Overlay - Subtler */
+/* Animations */
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Scanline Overlay */
 body::after {
     content: " ";
     display: block;
@@ -116,45 +91,28 @@ body::after {
     left: 0;
     bottom: 0;
     right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-    background-size: 100% 3px;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
     z-index: 9999;
+    background-size: 100% 2px, 3px 100%;
     pointer-events: none;
-    opacity: 0.6;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--term-bg);
+    border-left: 1px solid var(--term-muted);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
+    background: var(--term-muted);
+    border: 1px solid var(--term-bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--term-primary);
-}
-
-/* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.4s var(--ease-out) forwards;
+    background: var(--term-text);
 }
