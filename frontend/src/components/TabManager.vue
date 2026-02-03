@@ -90,6 +90,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* Mobile browser support */
   background: var(--term-bg);
   overflow: hidden;
 }

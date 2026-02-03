@@ -33,7 +33,6 @@
     <div 
       v-show="isConnected"
       class="terminal-wrapper" 
-      :style="{ height: terminalHeight + 'px' }"
     >
       <div ref="terminalContainer" class="xterm-container"></div>
       <Zoomer 
@@ -77,7 +76,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:title']);
 
-const terminalContainer = ref<HTMLElement | null>(null);
+
 const isConnected = ref(false);
 const error = ref('');
 const showManual = ref(false);
@@ -87,7 +86,7 @@ const form = ref({
   password: ''
 });
 
-const terminalHeight = ref(window.innerHeight);
+const terminalContainer = ref<HTMLElement | null>(null);
 const ctrlActive = ref(false);
 const currentFontSize = ref(14);
 
@@ -160,19 +159,18 @@ const initTerminal = () => {
   handleViewportResize();
 };
 
+
+
 const handleResize = () => {
-  if (!window.visualViewport) {
-    terminalHeight.value = window.innerHeight;
-    fitTerm();
-  }
+    // Debounce resize
+    setTimeout(fitTerm, 50);
 };
 
 const handleViewportResize = () => {
-  if (!window.visualViewport) return;
-  const controlsHeight = isConnected.value ? 96 : 0;
-  terminalHeight.value = window.visualViewport.height - controlsHeight;
-  setTimeout(fitTerm, 50);
-  window.scrollTo(0, 0);
+  // Mobile keyboard / visual viewport change
+  // Flexbox handles the layout, we just need to refit xterm
+  setTimeout(fitTerm, 100);
+  window.scrollTo(0, 0); // Keep pinned to top
 };
 
 const fitTerm = () => {
@@ -306,7 +304,10 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   flex: 1; /* Take remaining space */
+  min-height: 0; /* Crucial for nested flex scrolling */
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .xterm-container {
