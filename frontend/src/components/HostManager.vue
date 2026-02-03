@@ -112,6 +112,7 @@
                             Auto-logout after inactivity (0 = disable).
                         </div>
                     </div>
+                </div>
                 <div class="modal-footer">
                     <TerminalButton variant="danger" @click="handleLogout">LOGOUT</TerminalButton>
                     <div class="spacer"></div>
